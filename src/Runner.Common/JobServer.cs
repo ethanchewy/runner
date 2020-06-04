@@ -113,5 +113,14 @@ namespace GitHub.Runner.Common
             CheckConnection();
             return _taskClient.GetTimelineAsync(scopeIdentifier, hubName, planId, timelineId, includeRecords: true, cancellationToken: cancellationToken);
         }
+
+        //-----------------------------------------------------------------
+        // Action download info
+        //-----------------------------------------------------------------
+        public Task<string> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, CancellationToken cancellationToken)
+        {
+            CheckConnection();
+            return _taskClient.GetActionDownloadInfoAsync(scopeIdentifier, hubName, planId, cancellationToken: cancellationToken);
+        }
     }
 }

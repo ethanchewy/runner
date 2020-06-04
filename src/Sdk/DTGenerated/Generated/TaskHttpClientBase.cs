@@ -317,5 +317,36 @@ namespace GitHub.DistributedTask.WebApi
                 userState: userState,
                 cancellationToken: cancellationToken);
         }
+
+        /// <summary>
+        /// [Preview API]
+        /// </summary>
+        /// <param name="scopeIdentifier">The project GUID to scope the request</param>
+        /// <param name="hubName">The name of the server hub: "build" for the Build server or "rm" for the Release Management server</param>
+        /// <param name="planId"></param>
+        /// <param name="userState"></param>
+        /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
+        public virtual Task<string> GetActionDownloadInfoAsync(
+            Guid scopeIdentifier,
+            string hubName,
+            Guid planId,
+            object userState = null,
+            CancellationToken cancellationToken = default)
+        {
+            HttpMethod httpMethod = new HttpMethod("GET");
+            Guid locationId = new Guid("27d7f831-88c1-4719-8ca1-6a061dad90eb");
+            object routeValues = new { scopeIdentifier = scopeIdentifier, hubName = hubName, planId = planId };
+
+            List<KeyValuePair<string, string>> queryParams = new List<KeyValuePair<string, string>>();
+
+            return SendAsync<string>(
+                httpMethod,
+                locationId,
+                routeValues: routeValues,
+                version: new ApiResourceVersion(5.1, 1),
+                queryParameters: queryParams,
+                userState: userState,
+                cancellationToken: cancellationToken);
+        }
     }
 }
