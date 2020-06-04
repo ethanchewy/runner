@@ -22,6 +22,7 @@ namespace GitHub.Runner.Common
         Task<List<TimelineRecord>> UpdateTimelineRecordsAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, IEnumerable<TimelineRecord> records, CancellationToken cancellationToken);
         Task RaisePlanEventAsync<T>(Guid scopeIdentifier, string hubName, Guid planId, T eventData, CancellationToken cancellationToken) where T : JobEvent;
         Task<Timeline> GetTimelineAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, CancellationToken cancellationToken);
+        Task<string> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, CancellationToken cancellationToken);
     }
 
     public sealed class JobServer : RunnerService, IJobServer
