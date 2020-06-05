@@ -127,7 +127,7 @@ namespace GitHub.DistributedTask.WebApi
                                       cancellationToken);
         }
 
-        public Task<List<ActionDownloadInfo>> GetActionDownloadInfoAsync(
+        public Task<Dictionary<string, ActionDownloadInfo>> ResolveActionDownloadInfoAsync(
             Guid scopeIdentifier,
             String planType,
             Guid planId,
@@ -135,12 +135,12 @@ namespace GitHub.DistributedTask.WebApi
             CancellationToken cancellationToken = default(CancellationToken),
             Object userState = null)
         {
-            return GetActionDownloadInfoAsync(scopeIdentifier,
-                                              planType,
-                                              planId,
-                                              actions,
-                                              userState,
-                                              cancellationToken);
+            return ResolveActionDownloadInfoAsync(scopeIdentifier,
+                                                  planType,
+                                                  planId,
+                                                  actions,
+                                                  userState,
+                                                  cancellationToken);
         }
 
         private readonly ApiResourceVersion m_currentApiVersion = new ApiResourceVersion(2.0, 1);

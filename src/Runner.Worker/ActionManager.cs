@@ -601,14 +601,12 @@ namespace GitHub.Runner.Worker
         {
             executionContext.Output("Retrieving action download info");
             var actionReferences = actions
-                .Where(x => !string.IsNullOrEmpty(GetDownloadInfoLookupKey(x)))
-                .ToDictionary(
-                    x => GetDownloadInfoLookupKey(x),
-                    StringComparer.OrdinalIgnoreCase)
-                .Values
+                .GroupBy(x => GetDownloadInfoLookupKey(x))
+                .Where(x => !string.IsNullOrEmpty(x.Key))
                 .Select(x =>
                 {
-                    var repositoryReference = x.Reference as Pipelines.RepositoryPathReference;
+                    var action = x.First();
+                    var repositoryReference = action.Reference as Pipelines.RepositoryPathReference;
                     ArgUtil.NotNull(repositoryReference, nameof(repositoryReference));
                     return new WebApi.ActionReference
                     {
@@ -619,42 +617,35 @@ namespace GitHub.Runner.Worker
                 .ToList();
             var jobServer = HostContext.GetService<IJobServer>();
             executionContext.Output("Getting action download info");
-            var actionDownloadInfos = await jobServer.GetActionDownloadInfoAsync(executionContext.Plan.ScopeIdentifier, executionContext.Plan.PlanType, executionContext.Plan.PlanId, actionReferences, executionContext.CancellationToken);
-            var result = new Dictionary<string, WebApi.ActionDownloadInfo>(StringComparer.OrdinalIgnoreCase);
+            // todo: add retry
+            var result = await jobServer.ResolveActionDownloadInfoAsync(executionContext.Plan.ScopeIdentifier, executionContext.Plan.PlanType, executionContext.Plan.PlanId, actionReferences, executionContext.CancellationToken);
             var apiUrl = GetApiUrl(executionContext);
             var defaultAccessToken = executionContext.GetGitHubContext("token");
             var configurationStore = HostContext.GetService<IConfigurationStore>();
             var runnerSettings = configurationStore.GetSettings();
-            foreach (var actionDownloadInfo in actionDownloadInfos)
+            foreach (var actionDownloadInfo in result.Values)
             {
+                // Secret
                 HostContext.SecretMasker.AddValue(actionDownloadInfo.Token);
 
-                var lookupKey = GetDownloadInfoLookupKey(actionDownloadInfo);
-                if (result.ContainsKey(lookupKey))
-                {
-                    continue;
-                }
-
-                // Temporary code to set the token and replace the URL prefix
+                // Temporary code: Fix token and download URL
                 if (runnerSettings.IsHostedServer)
                 {
                     actionDownloadInfo.Token = defaultAccessToken;
                     actionDownloadInfo.TarballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
-                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
+                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.ZipballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                 }
                 else if (await RepoExistsAsync(executionContext, actionDownloadInfo, defaultAccessToken))
                 {
                     actionDownloadInfo.Token = defaultAccessToken;
                     actionDownloadInfo.TarballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
-                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
+                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.ZipballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                 }
                 else
                 {
                     actionDownloadInfo.TarballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", "https://api.github.com");
-                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", "https://api.github.com");
+                    actionDownloadInfo.ZipballUrl = actionDownloadInfo.ZipballUrl.Replace("<GITHUB_API_URL>", "https://api.github.com");
                 }
-
-                result[lookupKey] = actionDownloadInfo;
             }
 
             return result;
