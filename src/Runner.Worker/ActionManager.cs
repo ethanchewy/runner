@@ -799,13 +799,12 @@ namespace GitHub.Runner.Worker
 
 #if OS_WINDOWS
             string archiveFile = Path.Combine(tempDirectory, $"{Guid.NewGuid()}.zip");
-            string archiveLink = downloadInfo.ZipballUrl;
+            string link = downloadInfo?.ZipballUrl ?? actionDownloadDetails.ArchiveLink;
 #else
             string archiveFile = Path.Combine(tempDirectory, $"{Guid.NewGuid()}.tar.gz");
-            string archiveLink = downloadInfo.TarballUrl;
+            string link = downloadInfo?.TarballUrl ?? actionDownloadDetails.ArchiveLink;
 #endif
 
-            string link = downloadInfo != null ? archiveLink : actionDownloadDetails.ArchiveLink;
             Trace.Info($"Save archive '{link}' into {archiveFile}.");
             try
             {
