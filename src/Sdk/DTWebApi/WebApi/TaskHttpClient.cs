@@ -127,11 +127,11 @@ namespace GitHub.DistributedTask.WebApi
                                       cancellationToken);
         }
 
-        public Task<Dictionary<string, ActionDownloadInfo>> ResolveActionDownloadInfoAsync(
+        public Task<ActionDownloadInfoCollection> ResolveActionDownloadInfoAsync(
             Guid scopeIdentifier,
             String planType,
             Guid planId,
-            List<ActionReference> actions,
+            ActionReferenceList actions,
             CancellationToken cancellationToken = default(CancellationToken),
             Object userState = null)
         {

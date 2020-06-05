@@ -326,20 +326,20 @@ namespace GitHub.DistributedTask.WebApi
         /// <param name="planId"></param>
         /// <param name="userState"></param>
         /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-        public virtual Task<Dictionary<string, ActionDownloadInfo>> ResolveActionDownloadInfoAsync(
+        public virtual Task<ActionDownloadInfoCollection> ResolveActionDownloadInfoAsync(
             Guid scopeIdentifier,
             string hubName,
             Guid planId,
-            List<ActionReference> actions,
+            ActionReferenceList actions,
             object userState = null,
             CancellationToken cancellationToken = default)
         {
             HttpMethod httpMethod = new HttpMethod("POST");
             Guid locationId = new Guid("27d7f831-88c1-4719-8ca1-6a061dad90eb");
             object routeValues = new { scopeIdentifier = scopeIdentifier, hubName = hubName, planId = planId };
-            HttpContent content = new ObjectContent<List<ActionReference>>(actions, new VssJsonMediaTypeFormatter(true));
+            HttpContent content = new ObjectContent<ActionReferenceList>(actions, new VssJsonMediaTypeFormatter(true));
 
-            return SendAsync<Dictionary<string, ActionDownloadInfo>>(
+            return SendAsync<ActionDownloadInfoCollection>(
                 httpMethod,
                 locationId,
                 routeValues: routeValues,

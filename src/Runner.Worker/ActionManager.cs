@@ -597,9 +597,11 @@ namespace GitHub.Runner.Worker
         }
 
         // This implementation is temporary and will be replaced with a REST API call to the service to resolve
-        private async Task<Dictionary<string, WebApi.ActionDownloadInfo>> GetDownloadInfoAsync(IExecutionContext executionContext, List<Pipelines.ActionStep> actions)
+        private async Task<IDictionary<string, WebApi.ActionDownloadInfo>> GetDownloadInfoAsync(IExecutionContext executionContext, List<Pipelines.ActionStep> actions)
         {
-            executionContext.Output("Retrieving action download info");
+            executionContext.Output("Getting action download info");
+
+            // Convert to action reference
             var actionReferences = actions
                 .GroupBy(x => GetDownloadInfoLookupKey(x))
                 .Where(x => !string.IsNullOrEmpty(x.Key))
@@ -615,17 +617,47 @@ namespace GitHub.Runner.Worker
                     };
                 })
                 .ToList();
+
+            // Nothing to resolve?
+            if (actionReferences.Count == 0)
+            {
+                return new Dictionary<string, WebApi.ActionDownloadInfo>();
+            }
+
+            // Resolve download info
             var jobServer = HostContext.GetService<IJobServer>();
-            executionContext.Output("Getting action download info");
-            // todo: add retry
-            var result = await jobServer.ResolveActionDownloadInfoAsync(executionContext.Plan.ScopeIdentifier, executionContext.Plan.PlanType, executionContext.Plan.PlanId, actionReferences, executionContext.CancellationToken);
+            var actionDownloadInfos = default(WebApi.ActionDownloadInfoCollection);
+            for (var attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    actionDownloadInfos = await jobServer.ResolveActionDownloadInfoAsync(executionContext.Plan.ScopeIdentifier, executionContext.Plan.PlanType, executionContext.Plan.PlanId, new WebApi.ActionReferenceList { Actions = actionReferences }, executionContext.CancellationToken);
+                    break;
+                }
+                catch (Exception ex) when (attempt < 3)
+                {
+                    executionContext.Output(ex.Message);
+                    executionContext.Debug(ex.ToString());
+                    if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("_GITHUB_ACTION_DOWNLOAD_NO_BACKOFF")))
+                    {
+                        var backoff = BackoffTimerHelper.GetRandomBackoff(TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30));
+                        var seconds = Math.Pow(2, attempt);
+                        executionContext.Output($"Retrying in {backoff.TotalSeconds} seconds");
+                        await Task.Delay(backoff);
+                    }
+                }
+            }
+
+            ArgUtil.NotNull(actionDownloadInfos, nameof(actionDownloadInfos));
+            ArgUtil.NotNull(actionDownloadInfos.Actions, nameof(actionDownloadInfos.Actions));
             var apiUrl = GetApiUrl(executionContext);
             var defaultAccessToken = executionContext.GetGitHubContext("token");
             var configurationStore = HostContext.GetService<IConfigurationStore>();
             var runnerSettings = configurationStore.GetSettings();
-            foreach (var actionDownloadInfo in result.Values)
+
+            foreach (var actionDownloadInfo in actionDownloadInfos.Actions.Values)
             {
-                // Secret
+                // Add secret
                 HostContext.SecretMasker.AddValue(actionDownloadInfo.Token);
 
                 // Temporary code: Fix token and download URL
@@ -648,7 +680,7 @@ namespace GitHub.Runner.Worker
                 }
             }
 
-            return result;
+            return actionDownloadInfos.Actions;
         }
 
         // todo: Remove when feature flag DistributedTask.NewActionMetadata is removed
