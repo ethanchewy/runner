@@ -326,27 +326,27 @@ namespace GitHub.DistributedTask.WebApi
         /// <param name="planId"></param>
         /// <param name="userState"></param>
         /// <param name="cancellationToken">The cancellation token to cancel operation.</param>
-        public virtual Task<string> GetActionDownloadInfoAsync(
+        public virtual Task<List<ActionDownloadInfo>> GetActionDownloadInfoAsync(
             Guid scopeIdentifier,
             string hubName,
             Guid planId,
+            List<ActionReference> actions,
             object userState = null,
             CancellationToken cancellationToken = default)
         {
             HttpMethod httpMethod = new HttpMethod("GET");
             Guid locationId = new Guid("27d7f831-88c1-4719-8ca1-6a061dad90eb");
             object routeValues = new { scopeIdentifier = scopeIdentifier, hubName = hubName, planId = planId };
+            HttpContent content = new ObjectContent<List<ActionReference>>(actions, new VssJsonMediaTypeFormatter(true));
 
-            List<KeyValuePair<string, string>> queryParams = new List<KeyValuePair<string, string>>();
-
-            return SendAsync<string>(
+            return SendAsync<List<ActionDownloadInfo>>(
                 httpMethod,
                 locationId,
                 routeValues: routeValues,
                 version: new ApiResourceVersion(5.1, 1),
-                queryParameters: queryParams,
                 userState: userState,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken,
+                content: content);
         }
     }
 }

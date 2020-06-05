@@ -64,14 +64,6 @@ namespace GitHub.Runner.Worker
                 Trace.Info("Starting the job execution context.");
                 jobContext.Start();
                 jobContext.Debug($"Starting: {message.JobDisplayName}");
-                try
-                {
-                    jobContext.Output(await jobServer.GetActionDownloadInfoAsync(message.Plan.ScopeIdentifier, message.Plan.PlanType, message.Plan.PlanId, jobContext.CancellationToken));
-                }
-                catch (Exception ex)
-                {
-                    jobContext.Output(ex.ToString());
-                }
 
                 runnerShutdownRegistration = HostContext.RunnerShutdownToken.Register(() =>
                 {

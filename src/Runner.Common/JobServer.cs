@@ -22,7 +22,7 @@ namespace GitHub.Runner.Common
         Task<List<TimelineRecord>> UpdateTimelineRecordsAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, IEnumerable<TimelineRecord> records, CancellationToken cancellationToken);
         Task RaisePlanEventAsync<T>(Guid scopeIdentifier, string hubName, Guid planId, T eventData, CancellationToken cancellationToken) where T : JobEvent;
         Task<Timeline> GetTimelineAsync(Guid scopeIdentifier, string hubName, Guid planId, Guid timelineId, CancellationToken cancellationToken);
-        Task<string> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, CancellationToken cancellationToken);
+        Task<List<ActionDownloadInfo>> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, List<ActionReference> actions, CancellationToken cancellationToken);
     }
 
     public sealed class JobServer : RunnerService, IJobServer
@@ -118,10 +118,10 @@ namespace GitHub.Runner.Common
         //-----------------------------------------------------------------
         // Action download info
         //-----------------------------------------------------------------
-        public Task<string> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, CancellationToken cancellationToken)
+        public Task<List<ActionDownloadInfo>> GetActionDownloadInfoAsync(Guid scopeIdentifier, string hubName, Guid planId, List<ActionReference> actions, CancellationToken cancellationToken)
         {
             CheckConnection();
-            return _taskClient.GetActionDownloadInfoAsync(scopeIdentifier, hubName, planId, cancellationToken: cancellationToken);
+            return _taskClient.GetActionDownloadInfoAsync(scopeIdentifier, hubName, planId, actions, cancellationToken: cancellationToken);
         }
     }
 }
