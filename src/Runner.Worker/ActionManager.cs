@@ -658,18 +658,18 @@ namespace GitHub.Runner.Worker
             foreach (var actionDownloadInfo in actionDownloadInfos.Actions.Values)
             {
                 // Add secret
-                HostContext.SecretMasker.AddValue(actionDownloadInfo.Token);
+                HostContext.SecretMasker.AddValue(actionDownloadInfo.Authentication?.Token);
 
                 // Temporary code: Fix token and download URL
                 if (runnerSettings.IsHostedServer)
                 {
-                    actionDownloadInfo.Token = defaultAccessToken;
+                    actionDownloadInfo.Authentication = new WebApi.ActionDownloadAuthentication { Token = defaultAccessToken };
                     actionDownloadInfo.TarballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                     actionDownloadInfo.ZipballUrl = actionDownloadInfo.ZipballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                 }
                 else if (await RepoExistsAsync(executionContext, actionDownloadInfo, defaultAccessToken))
                 {
-                    actionDownloadInfo.Token = defaultAccessToken;
+                    actionDownloadInfo.Authentication = new WebApi.ActionDownloadAuthentication { Token = defaultAccessToken };
                     actionDownloadInfo.TarballUrl = actionDownloadInfo.TarballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                     actionDownloadInfo.ZipballUrl = actionDownloadInfo.ZipballUrl.Replace("<GITHUB_API_URL>", apiUrl);
                 }
@@ -855,7 +855,7 @@ namespace GitHub.Runner.Worker
                                 // FF DistributedTask.NewActionMetadata
                                 else
                                 {
-                                    httpClient.DefaultRequestHeaders.Authorization = CreateAuthHeader(downloadInfo.Token);
+                                    httpClient.DefaultRequestHeaders.Authorization = CreateAuthHeader(downloadInfo.Authentication?.Token);
                                 }
 
                                 httpClient.DefaultRequestHeaders.UserAgent.AddRange(HostContext.UserAgents);
